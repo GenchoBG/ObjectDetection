@@ -105,3 +105,6 @@ venv.bak/
 
 # large files for my solution
 VOCdevkit/
+
+# weights
+weights/
