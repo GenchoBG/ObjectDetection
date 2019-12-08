@@ -13,7 +13,7 @@ def read_labels(path):
     labels_count = len(labels)
     
     return labels, labels_count
-	
+
 class LabelEncoder():
     def __init__(self, labels):
         self.__dict__ = dict()
@@ -31,13 +31,13 @@ class LabelEncoder():
         return self.__dict__[index]
 
 class Object(object):
-    def __init__(self):        
-        self.name = 'unnamed'
-        self.conf = 0
-        self.xmin = None
-        self.ymin = None
-        self.xmax = None
-        self.ymax = None
+    def __init__(self, xmin = None, ymin = None, xmax = None, ymax = None, conf = 0, name = 'unnamed'):        
+        self.name = name
+        self.conf = conf
+        self.xmin = xmin
+        self.ymin = ymin
+        self.xmax = xmax
+        self.ymax = ymax
     
     def __str__(self):
         return f'{self.name} ({self.conf}) ({self.xmin}, {self.ymin}) ({self.xmax}, {self.ymax})'
@@ -115,7 +115,7 @@ def draw_image(imagepath, objects = [], draw_grid = False, grid_size = 0):
     
     
     display(im)	
-	
+
 
 def image_to_vgg_input(imagepath, inputshape):
     im = Img.open(imagepath).resize((224, 224))
@@ -123,3 +123,19 @@ def image_to_vgg_input(imagepath, inputshape):
     im -= 255 / 2
     
     return im
+
+def calculate_IoU(ground_truth, predicted):
+    # intersection rectangle
+    xmin = max(ground_truth.xmin, predicted.xmin)
+    ymin = max(ground_truth.ymin, predicted.ymin)
+    xmax = min(ground_truth.xmax, predicted.xmax)
+    ymax = min(ground_truth.ymax, predicted.ymax)
+    
+    interArea = max(0, xmax - xmin + 1) * max(0, ymax - ymin + 1)
+    
+    groundTruthArea = (ground_truth.xmax - ground_truth.xmin + 1) * (ground_truth.ymax - ground_truth.ymin + 1)
+    predictedArea = (predicted.xmax - predicted.xmin + 1) * (predicted.ymax - predicted.ymin + 1)
+    
+    iou = interArea / float(groundTruthArea + predictedArea - interArea)
+    
+    return iou
