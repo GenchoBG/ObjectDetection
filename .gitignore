@@ -108,3 +108,6 @@ VOCdevkit/
 
 # weights
 weights/
+
+# idea
+.idea/
