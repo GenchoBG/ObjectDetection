@@ -91,7 +91,6 @@ def draw_image(imagepath, objects = [], draw_grid = False, grid_size = 0):
     draw = ImgDraw.Draw(im)
     
     for obj in objects:
-        print(obj)
         color = _get_color()
         
         draw.line((obj.xmin, obj.ymin) + (obj.xmax, obj.ymin), fill = color, width = 2)
@@ -118,9 +117,16 @@ def draw_image(imagepath, objects = [], draw_grid = False, grid_size = 0):
 
 
 def image_to_vgg_input(imagepath, inputshape):
-    im = Img.open(imagepath).resize((224, 224))
+    im = Img.open(imagepath).resize(inputshape)
     im = np.array(im, np.float32)
     im -= 255 / 2
+    
+    return im
+
+def image_to_yolo_input(imagepath, inputshape):
+    im = Img.open(imagepath).resize(inputshape)
+    im = np.array(im, np.float32)
+    im /= 255
     
     return im
 
