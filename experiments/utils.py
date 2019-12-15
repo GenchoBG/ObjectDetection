@@ -86,7 +86,7 @@ def parse_annotation(filepath):
 def _get_color():
     return (int(uniform(0, 255)), int(uniform(0, 255)), int(uniform(0, 255)))
 
-def draw_image(imagepath, objects = [], draw_grid = False, grid_size = 0):
+def draw_image(imagepath, objects = [], draw_grid = False, grid_size = (0, 0)):
     im = Img.open(imagepath)    
     draw = ImgDraw.Draw(im)
     
@@ -103,18 +103,19 @@ def draw_image(imagepath, objects = [], draw_grid = False, grid_size = 0):
         #ymid = (obj.ymax + obj.ymin) / 2
         #draw.line((xmid, ymid) + (xmid, ymid), fill = color, width = 2)
     
+    
     if draw_grid:
-        width_factor = im.width / grid_size
-        height_factor = im.height / grid_size
+        width_factor = im.width / grid_size[0]
+        height_factor = im.height / grid_size[1]
         
-        for i in range(grid_size):
-            draw.line((i * width_factor, 0) + (i * width_factor, im.width), fill = 0, width = 2)
-            draw.line((0, i * height_factor) + (im.width, i * height_factor), fill = 0, width = 2)
-       
+        for i in range(grid_size[0]):
+            draw.line((i * width_factor, 0) + (i * width_factor, im.width), fill = 0, width = 1)
+            
+        for i in range(grid_size[1]):
+            draw.line((0, i * height_factor) + (im.width, i * height_factor), fill = 0, width = 1)
     
     
     display(im)	
-
 
 def image_to_vgg_input(imagepath, inputshape):
     im = Img.open(imagepath).resize(inputshape)
