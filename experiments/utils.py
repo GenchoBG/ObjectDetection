@@ -108,10 +108,8 @@ def draw_image(imagepath, objects = [], draw_grid = False, grid_size = (0, 0)):
         width_factor = im.width / grid_size[0]
         height_factor = im.height / grid_size[1]
         
-        for i in range(grid_size[0]):
-            draw.line((i * width_factor, 0) + (i * width_factor, im.width), fill = 0, width = 1)
-            
-        for i in range(grid_size[1]):
+        for i in range(max(grid_size[0], grid_size[1])):
+            draw.line((i * width_factor, 0) + (i * width_factor, im.height), fill = 0, width = 1)
             draw.line((0, i * height_factor) + (im.width, i * height_factor), fill = 0, width = 1)
     
     
