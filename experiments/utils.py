@@ -129,6 +129,15 @@ def image_to_yolo_input(imagepath, inputshape):
     
     return im
 
+def image_to_mobilenet_input(imagepath, inputshape):
+    im = Img.open(imagepath).resize(inputshape)
+    im = np.array(im, np.float32)
+    im /= 255
+    im -= 0.5
+    im *= 2.
+
+    return im
+
 def calculate_IoU(ground_truth, predicted):
     # intersection rectangle
     xmin = max(ground_truth.xmin, predicted.xmin)
