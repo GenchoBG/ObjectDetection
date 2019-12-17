@@ -84,6 +84,7 @@ def parse_annotation(filepath):
     return annotation
 
 def _get_color():
+    return (0, 255, 0)
     return (int(uniform(0, 255)), int(uniform(0, 255)), int(uniform(0, 255)))
 
 def draw_image(imagepath, objects = [], draw_grid = False, grid_size = (0, 0)):
