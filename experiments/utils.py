@@ -68,7 +68,9 @@ def parse_annotation(filepath):
                     setattr(curr, child.tag, int(child.text))
                 else:
                     setattr(curr, child.tag, child.text)
-        objects.append(curr)
+                    
+        if(curr.difficult == 0):
+            objects.append(curr)
         
     
     filename = et.find('filename').text
