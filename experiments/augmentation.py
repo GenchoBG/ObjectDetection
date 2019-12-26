@@ -16,23 +16,24 @@ def normalize(imagearr):
     
     return imagearr
 
-def display_image(imagearr):
-    imagearr = normalize(imagearr)    
+def display_image(imagearr): 
     imagearr = imagearr.astype(np.uint8)
     img = Img.fromarray(imagearr, 'RGB')
     display(img)
     
-def change_brightness_slightly(im, range_):
+def change_brightness_slightly(im, range_ = (-20, 20)):
     value = random.uniform(range_[0], range_[1])
     im += value
+    im = normalize(im)
     return im
 
-def change_brightness_not_so_slightly(im, range_):
+def change_brightness_not_so_slightly(im, range_ = (0.5, 1.5)):
     value = random.uniform(range_[0], range_[1])
     im *= value
+    im = normalize(im)
     return im
 
-def dropout(im, chance):
+def dropout(im, chance = 0.1):
     percent = random.uniform(0, chance)
     
     shapeprod = im.shape[0] * im.shape[1] * im.shape[2]
@@ -47,7 +48,7 @@ def dropout(im, chance):
     
     return im
 
-def adjust_contrast(im, range_):
+def adjust_contrast(im, range_ = (-100, 100)):
     value = random.uniform(range_[0], range_[1])
     factor = (259 * (value + 255)) / (255 * (259 - value))
 
