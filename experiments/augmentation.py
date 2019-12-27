@@ -65,7 +65,7 @@ def grayscale(im):
     
     return im
 
-def noise(im, mean = 0, sigma = 0.075):
+def noise(im, mean = 0, sigma = 0.05):
     sigma = random.uniform(0, sigma * 255) 
     
     gaussian = np.random.normal(mean, sigma, im.shape) 

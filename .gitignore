@@ -109,6 +109,10 @@ VOCdevkit/
 # weights
 weights/
 
+# training data
+annotations/
+images/
+
 # idea
 .idea/
 
