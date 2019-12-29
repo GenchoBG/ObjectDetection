@@ -4,6 +4,7 @@ from PIL import ImageDraw as ImgDraw
 from random import uniform
 import xml.etree.ElementTree as ET
 import numpy as np
+import os
 
 def read_labels(path):    
     with open(path) as f:
@@ -156,3 +157,31 @@ def calculate_IoU(ground_truth, predicted):
     iou = interArea / float(groundTruthArea + predictedArea - interArea)
     
     return iou
+
+
+def get_annotations_images(annotations_dir, images_dir):
+    image_formats = ['.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif']
+
+    annons, images = [], []
+    # r=root, d=directories, f = files
+    for r, d, f in os.walk(annotations_dir):
+        for file in f:
+            if '.xml' in file:
+                image_exists = False
+                for im_format in image_formats:
+                    image_name = file[:-4] + im_format
+
+                    image_path = images_dir + '\\' + image_name
+
+                    if os.path.exists(image_path):
+                        image_exists = True
+                        break
+
+                if image_exists:
+                    annons.append(annotations_dir + '\\' + file)
+                    images.append(images_dir + '\\' + image_name)
+
+    # annons = annons[:250]
+    # images = images[:250]
+
+    return annons, images
