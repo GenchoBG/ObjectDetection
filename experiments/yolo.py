@@ -9,11 +9,11 @@ from nms import nms, group_nms
 from networkfactory import NetworkFactory
 
 class YOLO():
-    def __init__(self, cfg, encoder, networkfactory, weights = None):
+    def __init__(self, cfg, encoder, networkfactory, optimizer = None, weights = None):
         self.cfg = cfg
         self.encoder = encoder
         self.networkfactory = networkfactory
-        self.model = networkfactory.get_network(cfg, weights)
+        self.model = networkfactory.get_network(cfg, optimizer, self.custom_loss, weights)
 
     def encode_y_true_from_annotation(self, annotation, raw_file = True):
         y_true = np.zeros(shape=(self.cfg.get('grid_width'), self.cfg.get('grid_height'),
@@ -316,7 +316,10 @@ class YOLO():
     def train(self, generator, annotations, images, epochs):
         # gen = tf.keras.preprocessing.image.ImageDataGenerator()
 
-        gen = generator(annotations, images)
+
+        gen = generator(annotations, images, self.cfg,
+                        self.networkfactory.get_normalizer(self.cfg),
+                        self.encode_y_true_from_annotation)
 
         h = self.model.fit_generator(gen, steps_per_epoch=len(images) // self.cfg.get('batch_size'), epochs = epochs)
 

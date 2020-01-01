@@ -13,11 +13,13 @@ class NetworkFactory():
     def supports(self, architecture):
         return architecture in self.__architectures__
 
-    def get_network(self, cfg, weights = None):
+    def get_network(self, cfg, optimizer = None, loss = None, weights = None):
         # './weights/mobilenetyolov2try07abitofaugmentation'
         net = cfg.get('net')
         if self.supports(net):
             model = self.__architectures__[net](cfg)
+            if optimizer:
+                model.compile(optimizer = optimizer, loss = loss)
             if weights:
                 model.load_weights(weights)
 
