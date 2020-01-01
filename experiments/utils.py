@@ -95,6 +95,7 @@ def draw_image(imagepath, objects = [], draw_grid = False, grid_size = (0, 0)):
     draw = ImgDraw.Draw(im)
     
     for obj in objects:
+        print(obj)
         color = _get_color()
         
         draw.line((obj.xmin, obj.ymin) + (obj.xmax, obj.ymin), fill = color, width = 2)
@@ -185,3 +186,12 @@ def get_annotations_images(annotations_dir, images_dir):
     # images = images[:250]
 
     return annons, images
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def softmax(x):
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+

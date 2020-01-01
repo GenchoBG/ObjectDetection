@@ -1,17 +1,21 @@
 import tensorflow as tf
 import numpy as np
-from utils import parse_annotation, Object, calculate_IoU, LabelEncoder
+from utils import parse_annotation, Object, calculate_IoU, LabelEncoder, draw_image, read_labels
 from config import Config
 import random
-
+from utils import softmax, sigmoid
+from PIL import Image as Img
+from nms import nms, group_nms
+from networkfactory import NetworkFactory
 
 class YOLO():
-    def __init__(self, cfg, encoder, networkfactory):
+    def __init__(self, cfg, encoder, networkfactory, weights = None):
         self.cfg = cfg
         self.encoder = encoder
         self.networkfactory = networkfactory
+        self.model = networkfactory.get_network(cfg, weights)
 
-    def encode_y_true_from_annotation(self, annotation, raw_file=True):
+    def encode_y_true_from_annotation(self, annotation, raw_file = True):
         y_true = np.zeros(shape=(self.cfg.get('grid_width'), self.cfg.get('grid_height'),
                                  self.cfg.get('boxes'), 5 + self.cfg.get('classes')))
         objs = [[[] for col in range(self.cfg.get('grid_width'))] for row in range(self.cfg.get('grid_height'))]
@@ -92,7 +96,6 @@ class YOLO():
                     y_true[row][col][best_anchor_index] = detector
 
         return y_true
-
 
     def custom_loss(self, y_true, y_pred):
         c_pred = y_pred[:, :, :, :, 0]
@@ -197,11 +200,141 @@ class YOLO():
 
         return loss
 
+    def decode_prediction(self, y_pred, onlyconf = False):
+        objects = []
+        accepted = 0
+        rejected = 0
+
+        for row in range(self.cfg.get('grid_height')):
+            for col in range(self.cfg.get('grid_width')):
+                for box in range(self.cfg.get('boxes')):
+                    to, tx, ty, tw, th = y_pred[row, col, box, :5]
+
+                    conf = sigmoid(to)
+                    labels = y_pred[row, col, box, 5:]
+                    labels = softmax(labels)
+
+                    max_label = max(labels)
+
+                    conf *= max_label
+
+                    # if conf >= threshhold and row == 3 and col == 3:
+                    if conf >= self.cfg.get('threshhold'):
+                        max_index = -1
+                        for i in range(len(labels)):
+                            if labels[i] == max_label:
+                                max_index = i
+                                break
+
+                        label = self.encoder.decode(max_index)
+                        accepted += 1
+                        # print(f'row: {row} col: {col} box: {box}')
+                        if onlyconf:
+                            bx = (col + 0.5) * self.cfg.get('cell_width')
+                            by = (row + 0.5) * self.cfg.get('cell_height')
+
+                            pw, ph = self.cfg.get('anchors')[box]
+
+                            bw = pw * self.cfg.get('cell_width')
+                            bh = ph * self.cfg.get('cell_height')
+
+                            # bw *= cell_width
+                            # bh *= cell_height
+                        else:
+                            bx = (sigmoid(tx) + col) * self.cfg.get('grid_width')
+                            by = (sigmoid(ty) + row) * self.cfg.get('grid_height')
+
+                            pw, ph = self.cfg.get('anchors')[box]
+
+                            bw = pw * np.exp(tw)
+                            bh = ph * np.exp(tw)
+
+                            bw *= self.cfg.get('cell_width')
+                            bh *= self.cfg.get('cell_height')
+
+                        objects.append(
+                            Object(xmin=bx - bw / 2, xmax=bx + bw / 2, ymin=by - bh / 2, ymax=by + bh / 2, conf=conf,
+                                   name=label))
+                    else:
+                        rejected += 1
+
+        print(f'accepted: {accepted}, rejected: {rejected}')
+        return objects
+
+    def feed_forward(self, image_path, draw = False, supression = "none"):
+        im = Img.open(image_path)
+
+        width_scale = im.width / self.cfg.get('image_width')
+        height_scale = im.height / self.cfg.get('image_height')
+
+        im = im.resize((self.cfg.get('image_width'), self.cfg.get('image_height')))
+        im = np.array(im, np.float32)
+        im /= 255
+
+        y_pred = self.model.predict(np.array([im]))[0]
+
+        objects = self.decode_prediction(y_pred, True)
+
+        for obj in objects:
+            w = obj.xmax - obj.xmin
+            h = obj.ymax - obj.ymin
+            # w *= grid_width
+            # h *= grid_height
+
+            xmid = (obj.xmax - obj.xmin) / 2
+            ymid = (obj.ymax - obj.ymin) / 2
+
+            # obj.xmin = xmid - w/2
+            # obj.xmax = xmid + w/2
+            # obj.ymin = ymid - h/2
+            # obj.ymax = ymid + h/2
+
+
+
+            obj.xmin *= width_scale
+            obj.xmax *= width_scale
+            obj.ymin *= height_scale
+            obj.ymax *= height_scale
+
+
+
+            # obj.xmin = obj.xmin * image_cell_width
+            # obj.xmax = obj.xmax * image_cell_width
+            # obj.ymin = obj.ymin * image_cell_height
+            # obj.ymax = obj.ymax * image_cell_height
+
+        if supression == "group":
+            objects = group_nms(self.cfg, objects)
+        if supression == "regular":
+            objects = nms(self.cfg, objects)
+
+        if draw:
+            draw_image(image_path, objects, draw_grid=True, grid_size=(self.cfg.get('grid_width'), self.cfg.get('grid_height')))
+
+        return objects
+
+    def train(self, generator, annotations, images, epochs):
+        # gen = tf.keras.preprocessing.image.ImageDataGenerator()
+
+        gen = generator(annotations, images)
+
+        h = self.model.fit_generator(gen, steps_per_epoch=len(images) // self.cfg.get('batch_size'), epochs = epochs)
+
+        #TODO: Give a summary
+
+
+
 def main():
     labels_dir = "./labels.txt"
     cfg_path = r"C:\Users\Gencho\Desktop\ObjectDetection\experiments\mobilenetyolov2-voc.cfg"
+    weights = r'./weights/mobilenetyolov2try07abitofaugmentation'
+    doggo = r"C:\Users\Gencho\Desktop\ObjectDetection\experiments\VOCdevkit\VOC2007\JPEGImages\000065.jpg"
 
     cfg = Config(cfg_path)
-    encoder = LabelEncoder(labels_dir)
+    encoder = LabelEncoder(read_labels(labels_dir)[0])
+    networkfactory = NetworkFactory()
 
-main()
+    yolo = YOLO(cfg, encoder, networkfactory, weights)
+    yolo.feed_forward(doggo, draw = True, supression="regular")
+
+#main()

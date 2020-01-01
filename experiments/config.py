@@ -1,14 +1,5 @@
-from tensorflow.keras.applications import MobileNet
 import numpy as np
-
-class NetworkFactory():
-    def __init__(self):
-        self.__architectures__ = dict()
-        self.__architectures__['mobilenet'] = MobileNet
-
-    def supports(self, architecture):
-        return architecture in self.__architectures__
-
+from networkfactory import NetworkFactory
 
 networkfactory = NetworkFactory()
 
