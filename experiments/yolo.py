@@ -308,8 +308,9 @@ class YOLO():
         if supression == "regular":
             objects = nms(self.cfg, objects)
 
-        if draw:
-            draw_image(image_path, objects, draw_grid=True, grid_size=(self.cfg.get('grid_width'), self.cfg.get('grid_height')))
+        if draw or save_image:
+            draw_image(image_path, objects, draw_grid=False,
+                       grid_size=(self.cfg.get('grid_width'), self.cfg.get('grid_height')), save=save_image)
 
         return objects
 

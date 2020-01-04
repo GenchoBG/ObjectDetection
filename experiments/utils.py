@@ -94,9 +94,17 @@ def _get_color():
     return (int(uniform(0, 255)), int(uniform(0, 255)), int(uniform(0, 255)))
 
 
-def draw_image(imagepath, objects=[], draw_grid=False, grid_size=(0, 0)):
+def draw_image(imagepath, objects=[], draw_grid=False, grid_size=(0, 0), save=False):
     im = Img.open(imagepath)
     draw = ImgDraw.Draw(im)
+
+    if draw_grid:
+        width_factor = im.width / grid_size[0]
+        height_factor = im.height / grid_size[1]
+
+        for i in range(max(grid_size[0], grid_size[1])):
+            draw.line((i * width_factor, 0) + (i * width_factor, im.height), fill=0, width=1)
+            draw.line((0, i * height_factor) + (im.width, i * height_factor), fill=0, width=1)
 
     for obj in objects:
         # print(obj)
@@ -112,14 +120,9 @@ def draw_image(imagepath, objects=[], draw_grid=False, grid_size=(0, 0)):
         # xmid = (obj.xmax + obj.xmin) / 2
         # ymid = (obj.ymax + obj.ymin) / 2
         # draw.line((xmid, ymid) + (xmid, ymid), fill = color, width = 2)
-
-    if draw_grid:
-        width_factor = im.width / grid_size[0]
-        height_factor = im.height / grid_size[1]
-
-        for i in range(max(grid_size[0], grid_size[1])):
-            draw.line((i * width_factor, 0) + (i * width_factor, im.height), fill=0, width=1)
-            draw.line((0, i * height_factor) + (im.width, i * height_factor), fill=0, width=1)
+    if save:
+        filename = imagepath.split('/')[-1]
+        im.save(f'./out/{filename}')
 
     display(im)
 
