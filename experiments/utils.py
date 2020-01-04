@@ -1,6 +1,7 @@
 from IPython.core.display import Image, display
 from PIL import Image as Img
 from PIL import ImageDraw as ImgDraw
+from PIL import ImageFont
 from random import uniform
 import xml.etree.ElementTree as ET
 import numpy as np
@@ -86,39 +87,41 @@ def parse_annotation(filepath):
     
     return annotation
 
+font = ImageFont.truetype("./fonts/comic-sans-ms/COMIC.TTF", 14)
+
 def _get_color():
     return (0, 255, 0)
     return (int(uniform(0, 255)), int(uniform(0, 255)), int(uniform(0, 255)))
 
-def draw_image(imagepath, objects = [], draw_grid = False, grid_size = (0, 0)):
-    im = Img.open(imagepath)    
+
+def draw_image(imagepath, objects=[], draw_grid=False, grid_size=(0, 0)):
+    im = Img.open(imagepath)
     draw = ImgDraw.Draw(im)
-    
+
     for obj in objects:
-        print(obj)
+        # print(obj)
         color = _get_color()
-        
-        draw.line((obj.xmin, obj.ymin) + (obj.xmax, obj.ymin), fill = color, width = 2)
-        draw.line((obj.xmin, obj.ymax) + (obj.xmax, obj.ymax), fill = color, width = 2)
-        draw.line((obj.xmin, obj.ymin) + (obj.xmin, obj.ymax), fill = color, width = 2)
-        draw.line((obj.xmax, obj.ymin) + (obj.xmax, obj.ymax), fill = color, width = 2)
-        
-        
-        #xmid = (obj.xmax + obj.xmin) / 2
-        #ymid = (obj.ymax + obj.ymin) / 2
-        #draw.line((xmid, ymid) + (xmid, ymid), fill = color, width = 2)
-    
-    
+
+        draw.text((obj.xmin, obj.ymin - 20), f"{obj.name}: {round(obj.conf, 2)}", font=font, fill=color)
+        draw.line((obj.xmin, obj.ymin) + (obj.xmax, obj.ymin), fill=color, width=2)
+        draw.line((obj.xmin, obj.ymax) + (obj.xmax, obj.ymax), fill=color, width=2)
+        draw.line((obj.xmin, obj.ymin) + (obj.xmin, obj.ymax), fill=color, width=2)
+        draw.line((obj.xmax, obj.ymin) + (obj.xmax, obj.ymax), fill=color, width=2)
+
+
+        # xmid = (obj.xmax + obj.xmin) / 2
+        # ymid = (obj.ymax + obj.ymin) / 2
+        # draw.line((xmid, ymid) + (xmid, ymid), fill = color, width = 2)
+
     if draw_grid:
         width_factor = im.width / grid_size[0]
         height_factor = im.height / grid_size[1]
-        
+
         for i in range(max(grid_size[0], grid_size[1])):
-            draw.line((i * width_factor, 0) + (i * width_factor, im.height), fill = 0, width = 1)
-            draw.line((0, i * height_factor) + (im.width, i * height_factor), fill = 0, width = 1)
-    
-    
-    display(im)	
+            draw.line((i * width_factor, 0) + (i * width_factor, im.height), fill=0, width=1)
+            draw.line((0, i * height_factor) + (im.width, i * height_factor), fill=0, width=1)
+
+    display(im)
 
 def image_to_vgg_input(imagepath, inputshape):
     im = Img.open(imagepath).resize(inputshape)

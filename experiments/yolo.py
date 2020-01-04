@@ -261,7 +261,7 @@ class YOLO():
         print(f'accepted: {accepted}, rejected: {rejected}')
         return objects
 
-    def feed_forward(self, image_path, draw = False, supression = "none"):
+    def feed_forward(self, image_path, draw = False, supression = "none", save_image = False, save_json = False):
         im = Img.open(image_path)
 
         width_scale = im.width / self.cfg.get('image_width')
