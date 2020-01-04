@@ -325,6 +325,8 @@ class YOLO():
 
         #TODO: Give a summary
 
+    def save(self, path):
+        self.model.save(path)
 
 
 def main():
