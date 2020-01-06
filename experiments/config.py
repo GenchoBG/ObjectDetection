@@ -17,27 +17,50 @@ class Config():
     def get(self, attr):
         return self.__data__[attr]
 
+    def parse_line(self, line):
+        data = line.split('=')
+        if len(data) != 2:
+            print('Warning: Skipped a line not in format [attribute]=[value]')
+            print(line)
+            return None, None
+
+        attr = data[0].strip()
+        value = data[1].strip()
+
+        return attr, value
+
     def parse_cfg(self, cfg_path):
         with open(cfg_path) as f:
             lines = f.readlines()
-            for index, line in enumerate(lines):
-                line = line.strip()
+            index = 0
+            count = len(lines)
+            while index < count:
+                line = lines[index].strip()
 
                 if line == "[net]":
                     self.parse_net(lines[index + 1:])
                     break
 
+                if line == '[optimizer]':
+                    index += 1
+                    line = lines[index]
+                    attr, data = self.parse_line(line)
+
+                    if attr == 'name':
+                        self.set('optimizer', data)
+                    else:
+                        print('Warning: First line after [optimizzer] must be name')
+                    index += 1
+                    continue
+
                 if line == "" or line[0] == '#' or line[0] == '[':
+                    index += 1
                     continue
 
-                data = line.split('=')
-                if len(data) != 2:
-                    print('Warning: Skipped a line not in format [attribute]=[value]')
-                    print(line)
+                attr, value = self.parse_line(line)
+                if attr == None:
+                    index += 1
                     continue
-
-                attr = data[0].strip()
-                value = data[1].strip()
 
                 if attr == 'anchors':
                     self.set(attr, self.parse_anchors(value))
@@ -48,6 +71,8 @@ class Config():
                         value = int(value)
 
                     self.set(attr, value)
+
+                index += 1
 
             self.post_calculations()
 
@@ -98,8 +123,10 @@ class Config():
         return anchors
 
 
+
 def main():
     cfg_path = r"C:\Users\Gencho\Desktop\ObjectDetection\experiments\mobilenetyolov2-voc.cfg"
     cfg = Config(cfg_path)
 
-main()
+if __name__ == '__main__':
+    main()

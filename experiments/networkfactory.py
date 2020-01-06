@@ -1,6 +1,7 @@
 from tensorflow.keras.applications import MobileNet
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Reshape, Conv2D
+from tensorflow.keras.optimizers import Adam
 
 class NetworkFactory():
     def __init__(self):
@@ -18,13 +19,29 @@ class NetworkFactory():
         net = cfg.get('net')
         if self.supports(net):
             model = self.__architectures__[net](cfg)
-            if optimizer:
-                model.compile(optimizer = optimizer, loss = loss)
+
+            model.compile(optimizer = optimizer if optimizer else self.get_optimizer(cfg), loss = loss)
+
             if weights:
                 model.load_weights(weights)
 
             return model
         pass
+
+    def get_optimizer(self, cfg):
+        optimizer = cfg.get('optimizer')
+        if not optimizer:
+            print('Warning: optimizer not specified in .cfg')
+
+        optimizer = optimizer.lower()
+        if optimizer == 'adam':
+            lr = cfg.get('learning_rate')
+            beta_1 = cfg.get('beta_1')
+            beta_2 = cfg.get('beta_2')
+            epsilon = cfg.get('epsilon')
+            decay = cfg.get('decay')
+
+            return Adam(lr = lr, beta_1 = beta_1, beta_2 = beta_2, epsilon = epsilon, decay = decay)
 
     def get_normalizer(self, cfg):
         net = cfg.get('net')

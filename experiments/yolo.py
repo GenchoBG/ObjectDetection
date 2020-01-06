@@ -9,7 +9,7 @@ from nms import nms, group_nms
 from networkfactory import NetworkFactory
 
 class YOLO():
-    def __init__(self, cfg, encoder, networkfactory, optimizer = None, weights = None):
+    def __init__(self, cfg, encoder, networkfactory, weights = None, optimizer = None):
         self.cfg = cfg
         self.encoder = encoder
         self.networkfactory = networkfactory
