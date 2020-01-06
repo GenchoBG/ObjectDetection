@@ -1,7 +1,7 @@
 from tensorflow.keras.applications import MobileNet
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Reshape, Conv2D
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 
 class NetworkFactory():
     def __init__(self):
@@ -41,7 +41,26 @@ class NetworkFactory():
             epsilon = cfg.get('epsilon')
             decay = cfg.get('decay')
 
+
             return Adam(lr = lr, beta_1 = beta_1, beta_2 = beta_2, epsilon = epsilon, decay = decay)
+
+        if optimizer == 'sgd':
+            lr = cfg.get('learning_rate')
+            momentum = cfg.get('momentum')
+            decay = cfg.get('decay')
+
+            return SGD(lr = lr, momentum = momentum, decay = decay)
+
+        if optimizer == 'rmsprop':
+            lr = cfg.get('learning_rate')
+            rho = cfg.get('rho')
+            epsilon = cfg.get('epsilon')
+            decay = cfg.get('decay')
+
+            return RMSprop(lr = lr, rho = rho, epsilon = epsilon, decay = decay)
+
+
+        print(f'Warning: unrecognised optimizer "{optimizer}"')
 
     def get_normalizer(self, cfg):
         net = cfg.get('net')
