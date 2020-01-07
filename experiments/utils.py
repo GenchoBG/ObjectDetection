@@ -6,6 +6,8 @@ from random import uniform
 import xml.etree.ElementTree as ET
 import numpy as np
 import os
+import json
+from json import JSONEncoder
 
 def read_labels(path):    
     with open(path) as f:
@@ -43,7 +45,11 @@ class Object(object):
     
     def __str__(self):
         return f'{self.name} ({self.conf}) ({self.xmin}, {self.ymin}) ({self.xmax}, {self.ymax})'
-    
+
+class MyJSONEncoder(JSONEncoder):
+    def default(self, o):
+        return o.__dict__
+
 class Annotation(object):
     def __init__(self):
         self.objects = []
@@ -125,6 +131,13 @@ def draw_image(imagepath, objects=[], draw_grid=False, grid_size=(0, 0), save=Fa
         im.save(f'./out/{filename}')
 
     display(im)
+
+def save_objects_to_json(imagepath, objects):
+    filename = imagepath.split('/')[-1]
+
+    text_file = open(f'./out/{filename}.json', "w")
+    n = text_file.write(json.dumps(objects, cls=MyJSONEncoder))
+    text_file.close()
 
 def image_to_vgg_input(imagepath, inputshape):
     im = Img.open(imagepath).resize(inputshape)

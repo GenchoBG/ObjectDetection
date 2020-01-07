@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from utils import parse_annotation, Object, calculate_IoU, LabelEncoder, draw_image, read_labels
+from utils import parse_annotation, Object, calculate_IoU, LabelEncoder, draw_image, read_labels, save_objects_to_json
 from config import Config
 import random
 from utils import softmax, sigmoid
@@ -311,6 +311,9 @@ class YOLO():
         if draw or save_image:
             draw_image(image_path, objects, draw_grid=False,
                        grid_size=(self.cfg.get('grid_width'), self.cfg.get('grid_height')), save=save_image)
+
+        if save_json:
+            save_objects_to_json(image_path, objects)
 
         return objects
 
