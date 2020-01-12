@@ -107,14 +107,17 @@ venv.bak/
 VOCdevkit/
 
 # weights
-weights/
+experiments/weights/
 
 # training data
-annotations/
-images/
+annotations/*
+images/*
 
 # idea
 .idea/
 
-# nothing
+# bad stuff
 ciganiq/
+annotationsbackup/
+imagesbackup/
+fails/
