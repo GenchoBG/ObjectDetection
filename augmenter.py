@@ -57,8 +57,7 @@ if __name__ == '__main__':
     parser.add_argument('--dest_ann', metavar='destination_annotations', type=str, default=None)
     parser.add_argument('--dest_im', metavar='destination_images', type=str, default=None)
 
-    augmenters = [blur, sharpen, noise, adjust_contrast, change_brightness_not_so_slightly, change_brightness_slightly,
-                  dropout, grayscale]
+    augmenters = [blur, adjust_contrast, change_brightness_not_so_slightly, change_brightness_slightly, dropout]
 
     args = parser.parse_args()
 
