@@ -9,7 +9,6 @@ def filter_datasaet(images_dir, annotations_dir, image_sets_dir, wanted_sets):
         for file in f:
             for wanted_set in wanted_sets:
                 if wanted_set in file:
-                    print(file)
                     with open(f'{image_sets_dir}\\{file}') as image_set_file:
                         sample_files = image_set_file.readlines()
                         for line in sample_files:

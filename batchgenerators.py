@@ -19,7 +19,7 @@ def batch_generator(annotations, images, cfg, normalizer_func, encoder_func, raw
 
 def batch_generator_inmemory(annotations, images, cfg, normalizer_func, encoder_func, raw_files=True):
     ins_memory = [normalizer_func(read_image(image, inputshape=(cfg.get('image_width'), cfg.get('image_height')))) for image in images]
-    outs = [encoder_func(annotation, raw_files) for annotation in annotations]
+    outs_memory = [encoder_func(annotation, raw_files) for annotation in annotations]
 
     ins = []
     outs = []
@@ -28,7 +28,7 @@ def batch_generator_inmemory(annotations, images, cfg, normalizer_func, encoder_
         for index in range(len(images)):
 
             ins.append(ins_memory[index])
-            outs.append(outs[index])
+            outs.append(outs_memory[index])
 
             if len(ins) == cfg.get('batch_size'):
                 yield (np.array(ins, dtype=np.float32), np.array(outs, dtype=np.float32))

@@ -294,7 +294,7 @@ class YOLO():
 
         return result
 
-    def feed_forward(self, image_path, draw = False, supression = "none", save_image = False, save_json = False):
+    def feed_forward(self, image_path, draw = False, supression = "none", save_image = False, save_json = False, onlyconf = False):
         im = Img.open(image_path)
 
         width_scale = im.width / self.cfg.get('image_width')
@@ -305,7 +305,7 @@ class YOLO():
 
         y_pred = self.model.predict(np.array([im]))[0]
 
-        objects = self.decode_prediction(y_pred, False)
+        objects = self.decode_prediction(y_pred, onlyconf)
 
         for obj in objects:
             obj.xmin *= width_scale
