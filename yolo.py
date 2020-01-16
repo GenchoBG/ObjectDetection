@@ -28,6 +28,9 @@ class YOLO():
         image_cell_height = annotation.imageheight / self.cfg.get('grid_height')
 
         for obj in annotation.objects:
+            if not self.encoder.supports(obj.name):
+                continue
+
             obj.xmid = (obj.xmax + obj.xmin) / 2
             obj.ymid = (obj.ymax + obj.ymin) / 2
             obj.width = obj.xmax - obj.xmin
@@ -290,7 +293,6 @@ class YOLO():
             result.append(objects)
 
         return result
-
 
     def feed_forward(self, image_path, draw = False, supression = "none", save_image = False, save_json = False):
         im = Img.open(image_path)

@@ -28,7 +28,7 @@ def batch_generator_inmemory(annotations, images, cfg, normalizer_func, encoder_
         for index in range(len(images)):
 
             ins.append(ins_memory[index])
-            outs.append(encoder_func(annotations[index], raw_files))
+            outs.append(outs[index])
 
             if len(ins) == cfg.get('batch_size'):
                 yield (np.array(ins, dtype=np.float32), np.array(outs, dtype=np.float32))

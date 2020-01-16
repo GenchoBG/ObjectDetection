@@ -112,6 +112,8 @@ experiments/weights/
 # training data
 annotations/*
 images/*
+imagesets/*
+
 
 # idea
 .idea/
