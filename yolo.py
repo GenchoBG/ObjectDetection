@@ -242,13 +242,13 @@ class YOLO():
                             # bw *= cell_width
                             # bh *= cell_height
                         else:
-                            bx = (sigmoid(tx) + col) * self.cfg.get('grid_width')
-                            by = (sigmoid(ty) + row) * self.cfg.get('grid_height')
+                            bx = (sigmoid(tx) + col) * self.cfg.get('cell_width')
+                            by = (sigmoid(ty) + row) * self.cfg.get('cell_height')
 
                             pw, ph = self.cfg.get('anchors')[box]
 
                             bw = pw * np.exp(tw)
-                            bh = ph * np.exp(tw)
+                            bh = ph * np.exp(th)
 
                             bw *= self.cfg.get('cell_width')
                             bh *= self.cfg.get('cell_height')
@@ -262,6 +262,36 @@ class YOLO():
         #print(f'accepted: {accepted}, rejected: {rejected}')
         return objects
 
+    def feed_forward_batch(self, images, supression = "none"):
+        ins = []
+
+        scales = []
+        normalizer = self.networkfactory.get_normalizer(self.cfg)
+        for image in images:
+            width_scale = image.shape[0] / self.cfg.get('image_width')
+            height_scale = image.shape[1] / self.cfg.get('image_height')
+
+            scales.append((width_scale, height_scale))
+
+            ins.append(normalizer(image))
+
+        y_preds = self.model.predict(np.array(ins, dtype = np.float32))
+
+
+        result = []
+        for pred in y_preds:
+            objects = self.decode_prediction(pred, True)
+
+            if supression == "group":
+                objects = group_nms(self.cfg, objects)
+            if supression == "regular":
+                objects = nms(self.cfg, objects)
+
+            result.append(objects)
+
+        return result
+
+
     def feed_forward(self, image_path, draw = False, supression = "none", save_image = False, save_json = False):
         im = Img.open(image_path)
 
@@ -273,35 +303,14 @@ class YOLO():
 
         y_pred = self.model.predict(np.array([im]))[0]
 
-        objects = self.decode_prediction(y_pred, True)
+        objects = self.decode_prediction(y_pred, False)
 
         for obj in objects:
-            w = obj.xmax - obj.xmin
-            h = obj.ymax - obj.ymin
-            # w *= grid_width
-            # h *= grid_height
-
-            xmid = (obj.xmax - obj.xmin) / 2
-            ymid = (obj.ymax - obj.ymin) / 2
-
-            # obj.xmin = xmid - w/2
-            # obj.xmax = xmid + w/2
-            # obj.ymin = ymid - h/2
-            # obj.ymax = ymid + h/2
-
-
-
             obj.xmin *= width_scale
             obj.xmax *= width_scale
             obj.ymin *= height_scale
             obj.ymax *= height_scale
 
-
-
-            # obj.xmin = obj.xmin * image_cell_width
-            # obj.xmax = obj.xmax * image_cell_width
-            # obj.ymin = obj.ymin * image_cell_height
-            # obj.ymax = obj.ymax * image_cell_height
 
         if supression == "group":
             objects = group_nms(self.cfg, objects)
