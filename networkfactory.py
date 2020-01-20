@@ -88,7 +88,8 @@ class NetworkFactory():
         return mobilenetyolov2
 
     def get_vgg16yolov2(self, cfg):
-        mobilenetyolov2 = VGG16(weights='imagenet', include_top=False, input_shape=(cfg.get('image_width'), cfg.get('image_height'), 3))
+        mobilenetyolov2 = VGG16(weights='none', include_top=False, input_shape=(cfg.get('image_width'), cfg.get('image_height'), 3))
+        #mobilenetyolov2.load_weights("./mobilenet_backend.h5")
         mobilenetyolov2.trainable = False
         layers = mobilenetyolov2.layers[:]
 
