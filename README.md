@@ -75,19 +75,84 @@ decay = 0.0
 predefined = mobilenet
 ```
 An example config can be found in /cfg/mobilenetyolov2.cfg or [here](https://pastebin.com/681E3JHg)
-##### The [out] section
+#### The [out] section
 Contains the number of labels, the number of anchor boxes (more on that [here](#anchors)) as well as the input dimensions of the backend network.
 
-##### The [loss] section
+#### The [loss] section
 Contains parameters used by the loss function (ignore if only using a pretrained network) and the batch size. Use a batch size of 1 for testing purposes and a larger one for training.
 
-##### The [optimizer] section
+#### The [optimizer] section
 The type of optimizer and the parameters of said optimizer. Supported optimizers are ADAM, RMSprop and SGD. Examples of their usage can be found in the example config.
 
-##### The [net] section
+#### The [net] section
 The architecture of the network used as a backend for the model. Predefined supported architectures are mobilenet and VGG. Custom architectures are also supported.
 
-##### The [decode] section
+#### The [decode] section
 Includes the anchor points of the predefined anchor boxes (more on that [here](#anchors)) as well as the threshholds for predicting objects and the Non-Max Suppression.
 
-## Anchors
+### Anchors
+The neural network predicts bounding boxes based on predefined anchor boxes. These anchor boxes can be hand-picked or (the better approach) can be calculated by an algorithm. </br>
+Anchors boxes are boxes which closely resemble the most typical object shapes in the training set. Anchor boxes look something like this: </br> </br>
+![Anchors](https://i.imgur.com/EvshViU.png)
+
+In [kmeans.ipynb](kmeans.ipynb) you can find a K-Means implementation of calculating the best possible N anchor boxes and a graph of the average IoU for each N. Based on the graph you should pick your number of boxes. For the VOC dataset the graph looks like so, and 5 bounding boxes is appropriate. </br> </br>
+![VOCkmeansgraph](https://i.imgur.com/65HTdY4.png)
+
+## Detecting objects
+Detecting objects is done the following way:
+```
+labels_dir = "./labels.txt"
+cfg_path = r"./cfg/mobilenetyolov2.cfg"
+weights = r'./weights/mobilenetyolov2'
+
+cfg = Config(cfg_path)
+encoder = LabelEncoder(read_labels(labels_dir)[0])
+networkfactory = NetworkFactory()
+
+yolo = YOLO(cfg, encoder, networkfactory, weights)
+
+afk = r"./mytestimages/marian.jpg"
+objs = yolo.feed_forward(afk, draw = True, supression="regular", save_image = True, save_json = True, onlyconf = True)
+```
+In order to detect objects you need to:
+1. Specify the labels & create a LabelEncoder object
+2. Specify the config & create a Config object
+3. Specify the weights
+4. Initialize a YOLO object with the config, encoder, weights & a NetworkFactory
+
+You detect objects by calling the feed_forward method, which returns a list of all the detected objects. It can also display the image (with the boxes surrounding detected objects), save the image with drawn boxes and save the list with objects as a .json file.
+
+A detection demo can be found [feed-forward.ipynb](feed-forward.ipynb).
+
+## Training a new model / further training an existing model
+Training your model is done the following way:
+```
+labels_dir = "./labels.txt"
+cfg_path = r"./cfg/mobilenetyolov2.cfg"
+weights = r'./weights/mobilenetyolov2'
+annotation_folder = r'.\annotations'
+images_folder = r'.\images'
+
+annotations, images = get_annotations_images(annotation_folder, images_folder)
+
+cfg = Config(cfg_path)
+encoder = LabelEncoder(read_labels(labels_dir)[0])
+networkfactory = NetworkFactory()
+
+#yolo = YOLO(cfg, encoder, networkfactory)
+yolo = YOLO(cfg, encoder, networkfactory, weights)
+
+epochs = 2000
+yolo.train(batch_generator_inmemory, annotations, images, epochs)
+
+yolo.save(weights)
+```
+In order to train a model you need to:
+1. Specify the labels & create a LabelEncoder object
+2. Specify the config & create a Config object
+3. Specify the weights (optional - if you do not specify any weights training will start from scratch)
+4. Initialize a YOLO object with the config, encoder, weights (optional) & a NetworkFactory
+5. Call the train method, specifying a batch generator, the training dataset (images & annotations) and the number of epochs
+6. Save your newly trained network by calling the save method
+
+A training demo can be found [train.ipynb](train.ipynb).
