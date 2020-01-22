@@ -156,3 +156,27 @@ In order to train a model you need to:
 6. Save your newly trained network by calling the save method
 
 A training demo can be found [train.ipynb](train.ipynb).
+
+### Data augmentation and filtration
+This library provides easy data filtration & augmentation, so you can easily train models for specific tasks.
+
+#### Filtration
+Let's say you want to make a object detector for a self-driving car and you have downloaded the VOC dataset. It has 20 objects in total, but some of them are useless to you (e.g. pottedplant, tvmonitor). You can easily filter them like so:
+```
+images_dir = r'./images'
+annotations_dir = r'./annotations'
+image_sets_dir = r'./imagesets'
+
+wanted_sets = ['bicycle', 'bus', 'car', 'motorbike', 'person']
+annotations_sdc, images_sdc = filter_datasaet(images_dir, annotations_dir, image_sets_dir, wanted_sets)
+
+yolo.train(batch_generator, annotations_sdc, images_sdc, epochs)
+```
+#### Augmentation
+If the dataset is small and you would like classic image augmentations the library provides many such as changing brightness, dropout of random pixels, adding noise, making the images grayscale, blurring, sharpening, adjusting the contrast. <br/>
+
+You can augment your dataset by running the augmenter.py file and passing in arguments and parameters like so:
+```
+python augmenter.py --cfg ./cfg/mobilenetyolov2.cfg --target 500
+```
+The following command will generate augmented images until the dataset has 500 entries. You can also specify the images/annotations folder, the target folders and the maximum allowed augmentations per image (3 by default).
