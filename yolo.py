@@ -265,7 +265,7 @@ class YOLO():
         #print(f'accepted: {accepted}, rejected: {rejected}')
         return objects
 
-    def feed_forward_batch(self, images, supression = "none"):
+    def feed_forward_batch(self, images, supression = "none", onlyconf = False):
         ins = []
 
         scales = []
@@ -283,7 +283,7 @@ class YOLO():
 
         result = []
         for pred in y_preds:
-            objects = self.decode_prediction(pred, True)
+            objects = self.decode_prediction(pred, onlyconf)
 
             if supression == "group":
                 objects = group_nms(self.cfg, objects)
