@@ -7,21 +7,23 @@ from tensorflow.keras.applications import VGG16
 class NetworkFactory():
     def __init__(self):
         self.__architectures__ = dict()
-        self.__architectures__['mobilenet'] = self.get_mobilenetyolov2
-        self.__architectures__['vgg16'] = self.get_vgg16yolov2
-
         self.__normalizers__ = dict()
-        self.__normalizers__['mobilenet'] = self.normalize_image_to_mobilenet_input
-        self.__normalizers__['vgg16'] = self.normalize_image_to_vgg_input
+
+        self.add_architecture('mobilenet', self.get_mobilenetyolov2, self.normalize_image_to_mobilenet_input)
+        self.add_architecture('vgg16', self.get_vgg16yolov2, self.normalize_image_to_vgg_input)
+
+    def add_architecture(self, name, get_model, get_normalizer):
+        self.__architectures__[name] = get_model
+        self.__normalizers__[name] = get_normalizer
 
     def supports(self, architecture):
         return architecture in self.__architectures__
 
     def get_network(self, cfg, optimizer = None, loss = None, weights = None):
-        # './weights/mobilenetyolov2try07abitofaugmentation'
         net = cfg.get('net')
         if self.supports(net):
-            model = self.__architectures__[net](cfg)
+            feature_extractor = self.__architectures__[net](cfg)
+            model = self.get_model(cfg, feature_extractor)
 
             model.compile(optimizer = optimizer if optimizer else self.get_optimizer(cfg), loss = loss)
 
@@ -29,7 +31,8 @@ class NetworkFactory():
                 model.load_weights(weights)
 
             return model
-        pass
+
+        print(f'Warning: unsupported architecture "{net}"')
 
     def get_optimizer(self, cfg):
         optimizer = cfg.get('optimizer')
@@ -71,36 +74,34 @@ class NetworkFactory():
             normalizer = self.__normalizers__[net]
             return normalizer
 
-        #TODO: throw exception or return custom normalizer if i decide to store them in the factory
+        print(f'Warning: unsupported architecture "{net}"')
+
+
+    def get_model(self, cfg, feature_extractor):
+        layers = feature_extractor.layers[:]
+
+        layers.append(
+            Conv2D(filters=(cfg.get('boxes') * (4 + 1 + cfg.get('classes'))), kernel_size=(1, 1), padding="same",
+                   name="conv_output"))
+        layers.append(Reshape(
+            target_shape=(cfg.get('grid_width'), cfg.get('grid_height'), cfg.get('boxes'), 5 + cfg.get('classes')),
+            name="output"))
+
+        model = Sequential(layers=layers, name=f"yolov2 {cfg.get('net')}")
+
+        return model
 
     def get_mobilenetyolov2(self, cfg):
         mobilenetyolov2 = MobileNet(weights='imagenet', include_top=False, input_shape=(cfg.get('image_width'), cfg.get('image_height'), 3))
         mobilenetyolov2.trainable = False
-        layers = mobilenetyolov2.layers[:]
-
-        layers.append(
-            Conv2D(filters=(cfg.get('boxes') * (4 + 1 + cfg.get('classes'))), kernel_size=(1, 1), padding="same", name="conv_output"))
-        layers.append(Reshape(target_shape=(cfg.get('grid_width'), cfg.get('grid_height'), cfg.get('boxes'), 5 + cfg.get('classes')), name="output"))
-
-        mobilenetyolov2 = Sequential(layers=layers, name="yolov2 mobilenet")
-        # mobilenetyolov2.summary()
 
         return mobilenetyolov2
 
     def get_vgg16yolov2(self, cfg):
-        mobilenetyolov2 = VGG16(weights='none', include_top=False, input_shape=(cfg.get('image_width'), cfg.get('image_height'), 3))
-        #mobilenetyolov2.load_weights("./mobilenet_backend.h5")
-        mobilenetyolov2.trainable = False
-        layers = mobilenetyolov2.layers[:]
+        vgg16yolov2 = VGG16(weights='none', include_top=False, input_shape=(cfg.get('image_width'), cfg.get('image_height'), 3))
+        vgg16yolov2.trainable = False
 
-        layers.append(
-            Conv2D(filters=(cfg.get('boxes') * (4 + 1 + cfg.get('classes'))), kernel_size=(1, 1), padding="same", name="conv_output"))
-        layers.append(Reshape(target_shape=(cfg.get('grid_width'), cfg.get('grid_height'), cfg.get('boxes'), 5 + cfg.get('classes')), name="output"))
-
-        mobilenetyolov2 = Sequential(layers=layers, name="yolov2 vgg16")
-        # mobilenetyolov2.summary()
-
-        return mobilenetyolov2
+        return vgg16yolov2
 
     def normalize_image_to_mobilenet_input(self, im):
         im /= 255
