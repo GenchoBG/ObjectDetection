@@ -29,7 +29,7 @@ class LabelEncoder():
             index += 1
 
     def supports(self, label):
-        return label in self.__dict__;
+        return label in self.__dict__
 
     def encode(self, label):
         return self.__dict__[label]

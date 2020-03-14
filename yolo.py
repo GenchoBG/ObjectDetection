@@ -38,7 +38,6 @@ class YOLO():
 
             row = int(obj.ymid / image_cell_height)
             col = int(obj.xmid / image_cell_width)
-            # print(f'row {row} col {col}')
 
             objs[row][col].append(obj)
 
@@ -68,16 +67,6 @@ class YOLO():
                             best_IoU = current_IoU
                             best_anchor_index = index
 
-                    '''
-                    grid_center_x = (row + 0.5) * image_cell_width
-                    grid_center_y = (col + 0.5) * image_cell_height
-    
-                    x = obj.xmid - grid_center_x
-                    y = obj.ymid - grid_center_y
-    
-                    w = np.log(obj.width / anchors[best_anchor_index][0]) 
-                    h = np.log(obj.height / anchors[best_anchor_index][1]) 
-                    '''
                     x = obj.xmid
                     y = obj.ymid
 
@@ -127,8 +116,12 @@ class YOLO():
 
         box_xpred = (tf.sigmoid(xpred) + cell_x) * self.cfg.get('cell_width')
         box_ypred = (tf.sigmoid(ypred) + cell_y) * self.cfg.get('cell_height')
-        box_wpred = tf.exp(wpred) * self.cfg.get('anchors')[:, 0] * self.cfg.get('cell_width')
-        box_hpred = tf.exp(hpred) * self.cfg.get('anchors')[:, 1] * self.cfg.get('cell_height')
+
+        #box_wpred = tf.exp(wpred) * self.cfg.get('anchors')[:, 0] * self.cfg.get('cell_width')
+        #box_wpred = tf.exp(hpred) * self.cfg.get('anchors')[:, 0] * self.cfg.get('cell_width')
+
+        box_wpred = (tf.sigmoid(wpred) + 0.5) * self.cfg.get('anchors')[:, 0] * self.cfg.get('cell_width')
+        box_hpred = (tf.sigmoid(hpred) + 0.5) * self.cfg.get('anchors')[:, 1] * self.cfg.get('cell_height')
 
         box_wpredhalf = box_wpred / 2
         box_hpredhalf = box_hpred / 2
@@ -176,13 +169,13 @@ class YOLO():
         coordcoef = tf.where(objects_present, coords, zeros)
         classescoef = tf.where(objects_present, classes, zeros)
 
-        xtrue = box_xtrue / self.cfg.get('cell_width') - (cell_x + 0.5)
-        ytrue = box_ytrue / self.cfg.get('cell_height') - (cell_y + 0.5)
-        wtrue = tf.log(box_wtrue / (self.cfg.get('cell_width') * self.cfg.get('anchors')[:, 0]))
-        htrue = tf.log(box_htrue / (self.cfg.get('cell_height') * self.cfg.get('anchors')[:, 1]))
+        #xtrue = box_xtrue / self.cfg.get('cell_width') - (cell_x + 0.5)
+        #ytrue = box_ytrue / self.cfg.get('cell_height') - (cell_y + 0.5)
+        #wtrue = tf.log(box_wtrue / (self.cfg.get('cell_width') * self.cfg.get('anchors')[:, 0]))
+        #htrue = tf.log(box_htrue / (self.cfg.get('cell_height') * self.cfg.get('anchors')[:, 1]))
 
-        wtrue = tf.where(objects_present, wtrue, zeros)
-        htrue = tf.where(objects_present, htrue, zeros)
+        #wtrue = tf.where(objects_present, wtrue, zeros)
+        #htrue = tf.where(objects_present, htrue, zeros)
         ious = tf.where(objects_present, ious, zeros)
 
         classestrue = tf.argmax(y_true[:, :, :, :, 5:], -1)
@@ -192,13 +185,20 @@ class YOLO():
 
         confloss = confcoef * ((ious - c_pred) ** 2)
 
-        xloss = coordcoef * ((xtrue - xpred) ** 2)
-        yloss = coordcoef * ((ytrue - ypred) ** 2)
+        xloss = coordcoef * ((box_xtrue - box_xpred) ** 2)
+        yloss = coordcoef * ((box_ytrue - box_ypred) ** 2)
+        wloss = coordcoef * ((box_wtrue - box_wpred) ** 2)
+        hloss = coordcoef * ((box_htrue - box_hpred) ** 2)
+        #xloss = coordcoef * ((xtrue - xpred) ** 2)
+        #yloss = coordcoef * ((ytrue - ypred) ** 2)
 
-        wloss = coordcoef * ((wtrue - wpred) ** 2)
-        hloss = coordcoef * ((htrue - hpred) ** 2)
+        #wloss = coordcoef * ((wtrue - wpred) ** 2)
+        #hloss = coordcoef * ((htrue - hpred) ** 2)
+
 
         coordloss = xloss + yloss + wloss + hloss
+
+        #coordloss = 0
 
         loss = confloss + coordloss + classesloss
 
@@ -206,8 +206,6 @@ class YOLO():
 
     def decode_prediction(self, y_pred, onlyconf = False):
         objects = []
-        accepted = 0
-        rejected = 0
 
         for row in range(self.cfg.get('grid_height')):
             for col in range(self.cfg.get('grid_width')):
@@ -222,7 +220,6 @@ class YOLO():
 
                     conf *= max_label
 
-                    # if conf >= threshhold and row == 3 and col == 3:
                     if conf >= self.cfg.get('threshhold'):
                         max_index = -1
                         for i in range(len(labels)):
@@ -231,8 +228,6 @@ class YOLO():
                                 break
 
                         label = self.encoder.decode(max_index)
-                        accepted += 1
-                        # print(f'row: {row} col: {col} box: {box}')
                         if onlyconf:
                             bx = (col + 0.5) * self.cfg.get('cell_width')
                             by = (row + 0.5) * self.cfg.get('cell_height')
@@ -241,17 +236,17 @@ class YOLO():
 
                             bw = pw * self.cfg.get('cell_width')
                             bh = ph * self.cfg.get('cell_height')
-
-                            # bw *= cell_width
-                            # bh *= cell_height
                         else:
                             bx = (sigmoid(tx) + col) * self.cfg.get('cell_width')
                             by = (sigmoid(ty) + row) * self.cfg.get('cell_height')
 
                             pw, ph = self.cfg.get('anchors')[box]
 
-                            bw = pw * np.exp(tw)
-                            bh = ph * np.exp(th)
+                            bw = pw * (sigmoid(tw) + 0.5)
+                            bh = ph * (sigmoid(th) + 0.5)
+
+                            #bw = pw * np.exp(tw)
+                            #bh = ph * np.exp(th)
 
                             bw *= self.cfg.get('cell_width')
                             bh *= self.cfg.get('cell_height')
@@ -259,10 +254,8 @@ class YOLO():
                         objects.append(
                             Object(xmin=bx - bw / 2, xmax=bx + bw / 2, ymin=by - bh / 2, ymax=by + bh / 2, conf=conf,
                                    name=label))
-                    else:
-                        rejected += 1
 
-        #print(f'accepted: {accepted}, rejected: {rejected}')
+
         return objects
 
     def feed_forward_batch(self, images, supression = "none", onlyconf = False):
