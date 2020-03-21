@@ -8,15 +8,18 @@ from PIL import Image as Img
 from nms import nms, group_nms
 from networkfactory import NetworkFactory
 from augmentation import read_image
+from keras.callbacks import ModelCheckpoint, EarlyStopping
+from sklearn.model_selection import train_test_split
+
 
 class YOLO():
-    def __init__(self, cfg, encoder, networkfactory, weights = None, optimizer = None):
+    def __init__(self, cfg, encoder, networkfactory, weights=None, optimizer=None):
         self.cfg = cfg
         self.encoder = encoder
         self.networkfactory = networkfactory
         self.model = networkfactory.get_network(cfg, optimizer, self.custom_loss, weights)
 
-    def encode_y_true_from_annotation(self, annotation, raw_file = True):
+    def encode_y_true_from_annotation(self, annotation, raw_file=True):
         y_true = np.zeros(shape=(self.cfg.get('grid_width'), self.cfg.get('grid_height'),
                                  self.cfg.get('boxes'), 5 + self.cfg.get('classes')))
         objs = [[[] for col in range(self.cfg.get('grid_width'))] for row in range(self.cfg.get('grid_height'))]
@@ -96,15 +99,15 @@ class YOLO():
 
         c_pred = tf.sigmoid(c_pred)
 
-
-        output_shape = (self.cfg.get('batch_size'), self.cfg.get('grid_width'), self.cfg.get('grid_height'), self.cfg.get('boxes'))
+        output_shape = (
+            self.cfg.get('batch_size'), self.cfg.get('grid_width'), self.cfg.get('grid_height'), self.cfg.get('boxes'))
 
         cell_x = tf.to_float(
             tf.reshape(tf.keras.backend
-                        .repeat_elements(
-                            tf.tile(tf.range(self.cfg.get('grid_width')),
-                                    [self.cfg.get('batch_size') * self.cfg.get('grid_height')]),
-                        self.cfg.get('boxes'), axis=0),
+                .repeat_elements(
+                tf.tile(tf.range(self.cfg.get('grid_width')),
+                        [self.cfg.get('batch_size') * self.cfg.get('grid_height')]),
+                self.cfg.get('boxes'), axis=0),
                 output_shape))
 
         cell_y = tf.transpose(cell_x, (0, 2, 1, 3))
@@ -117,8 +120,8 @@ class YOLO():
         box_xpred = (tf.sigmoid(xpred) + cell_x) * self.cfg.get('cell_width')
         box_ypred = (tf.sigmoid(ypred) + cell_y) * self.cfg.get('cell_height')
 
-        #box_wpred = tf.exp(wpred) * self.cfg.get('anchors')[:, 0] * self.cfg.get('cell_width')
-        #box_wpred = tf.exp(hpred) * self.cfg.get('anchors')[:, 0] * self.cfg.get('cell_width')
+        # box_wpred = tf.exp(wpred) * self.cfg.get('anchors')[:, 0] * self.cfg.get('cell_width')
+        # box_wpred = tf.exp(hpred) * self.cfg.get('anchors')[:, 0] * self.cfg.get('cell_width')
 
         box_wpred = (tf.sigmoid(wpred) + 0.5) * self.cfg.get('anchors')[:, 0] * self.cfg.get('cell_width')
         box_hpred = (tf.sigmoid(hpred) + 0.5) * self.cfg.get('anchors')[:, 1] * self.cfg.get('cell_height')
@@ -169,19 +172,20 @@ class YOLO():
         coordcoef = tf.where(objects_present, coords, zeros)
         classescoef = tf.where(objects_present, classes, zeros)
 
-        #xtrue = box_xtrue / self.cfg.get('cell_width') - (cell_x + 0.5)
-        #ytrue = box_ytrue / self.cfg.get('cell_height') - (cell_y + 0.5)
-        #wtrue = tf.log(box_wtrue / (self.cfg.get('cell_width') * self.cfg.get('anchors')[:, 0]))
-        #htrue = tf.log(box_htrue / (self.cfg.get('cell_height') * self.cfg.get('anchors')[:, 1]))
+        # xtrue = box_xtrue / self.cfg.get('cell_width') - (cell_x + 0.5)
+        # ytrue = box_ytrue / self.cfg.get('cell_height') - (cell_y + 0.5)
+        # wtrue = tf.log(box_wtrue / (self.cfg.get('cell_width') * self.cfg.get('anchors')[:, 0]))
+        # htrue = tf.log(box_htrue / (self.cfg.get('cell_height') * self.cfg.get('anchors')[:, 1]))
 
-        #wtrue = tf.where(objects_present, wtrue, zeros)
-        #htrue = tf.where(objects_present, htrue, zeros)
+        # wtrue = tf.where(objects_present, wtrue, zeros)
+        # htrue = tf.where(objects_present, htrue, zeros)
         ious = tf.where(objects_present, ious, zeros)
 
         classestrue = tf.argmax(y_true[:, :, :, :, 5:], -1)
         classespred = tf.nn.softmax(y_pred[:, :, :, :, 5:])
 
-        classesloss = classescoef * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=classestrue, logits=classespred)
+        classesloss = classescoef * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=classestrue,
+                                                                                   logits=classespred)
 
         confloss = confcoef * ((ious - c_pred) ** 2)
 
@@ -189,22 +193,22 @@ class YOLO():
         yloss = coordcoef * ((box_ytrue - box_ypred) ** 2)
         wloss = coordcoef * ((box_wtrue - box_wpred) ** 2)
         hloss = coordcoef * ((box_htrue - box_hpred) ** 2)
-        #xloss = coordcoef * ((xtrue - xpred) ** 2)
-        #yloss = coordcoef * ((ytrue - ypred) ** 2)
+        # xloss = coordcoef * ((xtrue - xpred) ** 2)
+        # yloss = coordcoef * ((ytrue - ypred) ** 2)
 
-        #wloss = coordcoef * ((wtrue - wpred) ** 2)
-        #hloss = coordcoef * ((htrue - hpred) ** 2)
+        # wloss = coordcoef * ((wtrue - wpred) ** 2)
+        # hloss = coordcoef * ((htrue - hpred) ** 2)
 
 
         coordloss = xloss + yloss + wloss + hloss
 
-        #coordloss = 0
+        # coordloss = 0
 
         loss = confloss + coordloss + classesloss
 
         return loss
 
-    def decode_prediction(self, y_pred, onlyconf = False):
+    def decode_prediction(self, y_pred, onlyconf=False):
         objects = []
 
         for row in range(self.cfg.get('grid_height')):
@@ -245,8 +249,8 @@ class YOLO():
                             bw = pw * (sigmoid(tw) + 0.5)
                             bh = ph * (sigmoid(th) + 0.5)
 
-                            #bw = pw * np.exp(tw)
-                            #bh = ph * np.exp(th)
+                            # bw = pw * np.exp(tw)
+                            # bh = ph * np.exp(th)
 
                             bw *= self.cfg.get('cell_width')
                             bh *= self.cfg.get('cell_height')
@@ -255,10 +259,9 @@ class YOLO():
                             Object(xmin=bx - bw / 2, xmax=bx + bw / 2, ymin=by - bh / 2, ymax=by + bh / 2, conf=conf,
                                    name=label))
 
-
         return objects
 
-    def feed_forward_batch(self, images, supression = "none", onlyconf = False):
+    def feed_forward_batch(self, images, supression="none", onlyconf=False):
         ins = []
 
         scales = []
@@ -271,8 +274,7 @@ class YOLO():
 
             ins.append(normalizer(image))
 
-        y_preds = self.model.predict(np.array(ins, dtype = np.float32))
-
+        y_preds = self.model.predict(np.array(ins, dtype=np.float32))
 
         result = []
         for pred in y_preds:
@@ -287,7 +289,8 @@ class YOLO():
 
         return result
 
-    def feed_forward(self, image_path, draw = False, supression = "none", save_image = False, save_json = False, onlyconf = False):
+    def feed_forward(self, image_path, draw=False, supression="none", save_image=False, save_json=False,
+                     onlyconf=False):
         im = Img.open(image_path)
 
         width_scale = im.width / self.cfg.get('image_width')
@@ -306,7 +309,6 @@ class YOLO():
             obj.ymin *= height_scale
             obj.ymax *= height_scale
 
-
         if supression == "group":
             objects = group_nms(self.cfg, objects)
         if supression == "regular":
@@ -321,33 +323,40 @@ class YOLO():
 
         return objects
 
-    def train(self, generator, annotations, images, epochs):
+    def train(self, generator, annotations, images, epochs, checkpoint_period=None, early_stopping=False):
         # gen = tf.keras.preprocessing.image.ImageDataGenerator()
 
+        annotations_train, annotations_val, images_train, images_val = train_test_split(annotations, images,
+                                                                                        test_size=0.1)
 
-        gen = generator(annotations, images, self.cfg,
-                        self.networkfactory.get_normalizer(self.cfg),
-                        self.encode_y_true_from_annotation)
+        gen_train = generator(annotations_train, images_train, self.cfg,
+                              self.networkfactory.get_normalizer(self.cfg),
+                              self.encode_y_true_from_annotation)
 
-        h = self.model.fit_generator(gen, steps_per_epoch=len(images) // self.cfg.get('batch_size'), epochs = epochs)
+        gen_val = generator(annotations_val, images_val, self.cfg,
+                            self.networkfactory.get_normalizer(self.cfg),
+                            self.encode_y_true_from_annotation)
 
-        #TODO: Give a summary
+        callbacks = []
+
+        if checkpoint_period:
+            modelname = self.cfg.get("net")
+            filepath = "./weights/" + modelname + "/checkpoint-{epoch:02d}"
+
+            checkpoint = ModelCheckpoint(filepath=filepath, period=checkpoint_period)
+            #callbacks.append(checkpoint)
+
+        if early_stopping:
+            es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
+            #callbacks.append(es)
+
+        h = self.model.fit_generator(gen_train, steps_per_epoch=len(images_train) // self.cfg.get('batch_size'),
+                                     validation_data=gen_val,
+                                     validation_steps=len(images_val) // self.cfg.get('batch_size'),
+                                     epochs=epochs,
+                                     callbacks=callbacks)
+
+        # TODO: Give a summary
 
     def save(self, path):
         self.model.save(path)
-
-
-def main():
-    labels_dir = "./labels.txt"
-    cfg_path = r"C:\Users\Gencho\Desktop\ObjectDetection\experiments\mobilenetyolov2-voc.cfg"
-    weights = r'./weights/mobilenetyolov2try07abitofaugmentation'
-    doggo = r"C:\Users\Gencho\Desktop\ObjectDetection\experiments\VOCdevkit\VOC2007\JPEGImages\000065.jpg"
-
-    cfg = Config(cfg_path)
-    encoder = LabelEncoder(read_labels(labels_dir)[0])
-    networkfactory = NetworkFactory()
-
-    yolo = YOLO(cfg, encoder, networkfactory, weights)
-    yolo.feed_forward(doggo, draw = True, supression="regular")
-
-#main()
