@@ -323,11 +323,16 @@ class YOLO():
 
         return objects
 
-    def train(self, generator, annotations, images, epochs, checkpoint_period=None, early_stopping=False):
-        # gen = tf.keras.preprocessing.image.ImageDataGenerator()
+    def train(self, generator, annotations, images, epochs, checkpoint_period=None, early_stopping=False, patience=20,
+              validation_portion=None):
+
+        if validation_portion == None:
+            validation_portion = self.cfg.get('batch_size') / len(images)
+            if validation_portion > 0.2:
+                validation_portion = 0.2
 
         annotations_train, annotations_val, images_train, images_val = train_test_split(annotations, images,
-                                                                                        test_size=0.1)
+                                                                                        test_size=validation_portion)
 
         gen_train = generator(annotations_train, images_train, self.cfg,
                               self.networkfactory.get_normalizer(self.cfg),
@@ -341,22 +346,28 @@ class YOLO():
 
         if checkpoint_period:
             modelname = self.cfg.get("net")
-            filepath = "./weights/" + modelname + "/checkpoint-{epoch:02d}"
+            filepath = "./weights/" + modelname + "yolov2-checkpoint-{epoch:02d}"
 
             checkpoint = ModelCheckpoint(filepath=filepath, period=checkpoint_period)
-            #callbacks.append(checkpoint)
+            callbacks.append(checkpoint)
 
         if early_stopping:
-            es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
-            #callbacks.append(es)
+            es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=patience)
+            callbacks.append(es)
 
-        h = self.model.fit_generator(gen_train, steps_per_epoch=len(images_train) // self.cfg.get('batch_size'),
+        steps_per_epoch = len(images_train) // self.cfg.get('batch_size')
+        validation_steps = len(images_val) // self.cfg.get('batch_size')
+
+        if validation_steps == 0:
+            validation_steps = 1
+
+        h = self.model.fit_generator(gen_train, steps_per_epoch=steps_per_epoch,
                                      validation_data=gen_val,
-                                     validation_steps=len(images_val) // self.cfg.get('batch_size'),
+                                     validation_steps=validation_steps,
                                      epochs=epochs,
                                      callbacks=callbacks)
 
-        # TODO: Give a summary
+        return h
 
     def save(self, path):
         self.model.save(path)
