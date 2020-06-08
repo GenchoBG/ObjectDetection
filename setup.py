@@ -1,7 +1,7 @@
 from distutils.core import setup
 setup(
   name = 'ObjectDetectionElsys',
-  packages = ['ObjectDetectionElsys'],   # Chose the same as "name"
+  packages = ['ObjectDetectionElsys'],
   version = '0.1',
   license='MIT',
   description = 'Object detection and classification based on the YOLO & YOLOv2 algorithms implemented using TensorFlow',

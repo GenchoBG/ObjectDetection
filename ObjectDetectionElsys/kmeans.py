@@ -5,7 +5,7 @@ from pyclustering.cluster.center_initializer import kmeans_plusplus_initializer
 from pyclustering.cluster.kmeans import kmeans as KMeans
 from pyclustering.utils.metric import type_metric, distance_metric
 
-from ObjectDetectionElsys import parse_annotation, calculate_IoU, Object
+from ObjectDetectionElsys.utils import parse_annotation, calculate_IoU, Object
 
 
 def distance(boxcoords, centroid):

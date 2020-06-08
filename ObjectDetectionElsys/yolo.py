@@ -4,10 +4,10 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image as Img
 from keras.callbacks import ModelCheckpoint, EarlyStopping
-from nms import nms, group_nms
+from ObjectDetectionElsys.nms import nms, group_nms
 from sklearn.model_selection import train_test_split
-from utils import parse_annotation, Object, calculate_IoU, draw_image, save_objects_to_json
-from utils import softmax, sigmoid
+from ObjectDetectionElsys.utils import parse_annotation, Object, calculate_IoU, draw_image, save_objects_to_json
+from ObjectDetectionElsys.utils import softmax, sigmoid
 
 from ObjectDetectionElsys.augmentation import read_image
 

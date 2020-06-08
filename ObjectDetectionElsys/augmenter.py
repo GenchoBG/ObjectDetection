@@ -4,8 +4,8 @@ import shutil
 
 import numpy as np
 from PIL import Image as Img
-from config import Config
-from utils import get_annotations_images
+from ObjectDetectionElsys.config import Config
+from ObjectDetectionElsys.utils import get_annotations_images
 
 from ObjectDetectionElsys.augmentation import read_image, change_brightness_slightly, \
     change_brightness_not_so_slightly, dropout, adjust_contrast, blur

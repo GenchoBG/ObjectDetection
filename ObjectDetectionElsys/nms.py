@@ -1,4 +1,4 @@
-from ObjectDetectionElsys import calculate_IoU
+from ObjectDetectionElsys.utils import calculate_IoU
 
 def nms(cfg, objects):
     if len(objects) == 0:

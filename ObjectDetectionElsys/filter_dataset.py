@@ -1,6 +1,6 @@
 import os
 
-from ObjectDetectionElsys import get_annotations_images
+from ObjectDetectionElsys.utils import get_annotations_images
 
 
 def filter_datasaet(images_dir, annotations_dir, image_sets_dir, wanted_sets):

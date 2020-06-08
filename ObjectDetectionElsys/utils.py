@@ -96,7 +96,8 @@ def parse_annotation(filepath):
     
     return annotation
 
-font = ImageFont.truetype("./fonts/comic-sans-ms/COMIC.TTF", 14)
+font = ImageFont.load_default()
+#font = ImageFont.truetype("./fonts/comic-sans-ms/COMIC.TTF", 14)
 
 def _get_color():
     return (0, 255, 0)
