@@ -8,14 +8,13 @@ setup(
   author = 'Evgeni Dimov',
   author_email = 'evgenidimovtues@gmail.com',
   url = 'https://github.com/GenchoBG/ObjectDetection',
-  download_url = 'https://github.com/GenchoBG/ObjectDetection/archive/v_01.tar.gz',
+  download_url = 'https://github.com/GenchoBG/ObjectDetection/archive/v_011.tar.gz',
   keywords = ['Computer Vision', 'Object Detection', 'Image Augmentation', 'Yolo'],
   install_requires = [            # I get to this in a second
           'numpy',
           'scipy',
           'Pillow',
           'argparse',
-          'shutil',
           'pyclustering',
           'tensorflow',
           'sklearn'
