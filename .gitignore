@@ -104,15 +104,18 @@ venv.bak/
 .mypy_cache/
 
 # large files for my solution
-VOCdevkit/
+experiments/VOCdevkit/
 
 # weights
 experiments/weights/
+example/weights/
 
 # training data
-annotations/*
-images/*
-imagesets/*
+example/annotations/*
+
+example/images/*
+
+example/imagesets/*
 
 
 # idea
