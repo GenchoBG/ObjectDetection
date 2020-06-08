@@ -2,13 +2,13 @@ from distutils.core import setup
 setup(
   name = 'ObjectDetectionElsys',
   packages = ['ObjectDetectionElsys'],
-  version = '0.1.1',
+  version = '0.1.2',
   license='MIT',
   description = 'Object detection and classification based on the YOLO & YOLOv2 algorithms implemented using TensorFlow',
   author = 'Evgeni Dimov',
   author_email = 'evgenidimovtues@gmail.com',
   url = 'https://github.com/GenchoBG/ObjectDetection',
-  download_url = 'https://github.com/GenchoBG/ObjectDetection/archive/v_011.tar.gz',
+  download_url = 'https://github.com/GenchoBG/ObjectDetection/archive/v_012.tar.gz',
   keywords = ['Computer Vision', 'Object Detection', 'Image Augmentation', 'Yolo'],
   install_requires = [            # I get to this in a second
           'numpy',
