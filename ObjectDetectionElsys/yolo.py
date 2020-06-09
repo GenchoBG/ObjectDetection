@@ -8,16 +8,18 @@ from ObjectDetectionElsys.nms import nms, group_nms
 from sklearn.model_selection import train_test_split
 from ObjectDetectionElsys.utils import parse_annotation, Object, calculate_IoU, draw_image, save_objects_to_json
 from ObjectDetectionElsys.utils import softmax, sigmoid
-
 from ObjectDetectionElsys.augmentation import read_image
 
 
 class YOLO():
-    def __init__(self, cfg, encoder, networkfactory, weights=None, optimizer=None):
+    def __init__(self, cfg, encoder, networkfactory, weights=None, optimizer=None, custom_loss=None):
         self.cfg = cfg
         self.encoder = encoder
         self.networkfactory = networkfactory
-        self.model = networkfactory.get_network(cfg, optimizer, self.custom_loss, weights)
+
+        loss = custom_loss if custom_loss != None else self.custom_loss
+
+        self.model = networkfactory.get_network(cfg, optimizer, loss, weights)
 
     def encode_y_true_from_annotation(self, annotation, raw_file=True):
         y_true = np.zeros(shape=(self.cfg.get('grid_width'), self.cfg.get('grid_height'),
