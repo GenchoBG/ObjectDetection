@@ -95,7 +95,7 @@ The neural network predicts bounding boxes based on predefined anchor boxes. The
 Anchors boxes are boxes which closely resemble the most typical object shapes in the training set. Anchor boxes look something like this: </br> </br>
 ![Anchors](https://i.imgur.com/EvshViU.png)
 
-In [kmeans.ipynb](kmeans.ipynb) you can find a K-Means implementation of calculating the best possible N anchor boxes and a graph of the average IoU for each N. Based on the graph you should pick your number of boxes. For the VOC dataset the graph looks like so, and 5 bounding boxes is appropriate. </br> </br>
+In [example/kmeans.ipynb](example/kmeans.ipynb) you can find a K-Means implementation of calculating the best possible N anchor boxes and a graph of the average IoU for each N. Based on the graph you should pick your number of boxes. For the VOC dataset the graph looks like so, and 5 bounding boxes is appropriate. </br> </br>
 ![VOCkmeansgraph](https://i.imgur.com/65HTdY4.png)
 
 ## Detecting objects
@@ -122,7 +122,7 @@ In order to detect objects you need to:
 
 You detect objects by calling the feed_forward method, which returns a list of all the detected objects. It can also display the image (with the boxes surrounding detected objects), save the image with drawn boxes and save the list with objects as a .json file.
 
-A detection demo can be found [feed-forward.ipynb](feed-forward.ipynb).
+A detection demo can be found [example/feed-forward.ipynb](example/feed-forward.ipynb).
 
 ## Training a new model / further training an existing model
 Training your model is done the following way:
@@ -155,7 +155,7 @@ In order to train a model you need to:
 5. Call the train method, specifying a batch generator, the training dataset (images & annotations) and the number of epochs
 6. Save your newly trained network by calling the save method
 
-A training demo can be found [train.ipynb](train.ipynb).
+A training demo can be found [example/train.ipynb](example/train.ipynb).
 
 ### Data augmentation and filtration
 This library provides easy data filtration & augmentation, so you can easily train models for specific tasks.
@@ -180,3 +180,5 @@ You can augment your dataset by running the augmenter.py file and passing in arg
 python augmenter.py --cfg ./cfg/mobilenetyolov2.cfg --target 500
 ```
 The following command will generate augmented images until the dataset has 500 entries. You can also specify the images/annotations folder, the target folders and the maximum allowed augmentations per image (3 by default).
+
+A demo is also available in the [example/data-augmentation.ipynb](data-augmentation.ipynb) notebook.
